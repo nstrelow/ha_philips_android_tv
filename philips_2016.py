@@ -334,10 +334,9 @@ class PhilipsTVBase(object):
     def getApplications(self):
         r = self._getReq('applications')
         if r:
-            #self.applications = r['applications']
             self.pkgNameToApp = {app['intent']['component']['packageName']:app for app in r['applications']}
             self.applications = {app['label']:app for app in r['applications']}
-            self.app_source_list = self.applications.keys()
+            self.app_source_list = list(self.applications.keys())
     
     def change_application(self, app_label):
         if app_label:
