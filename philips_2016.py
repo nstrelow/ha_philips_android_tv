@@ -180,6 +180,7 @@ class PhilipsTV(MediaPlayerDevice):
 
 	def select_source(self, source):
 		self._tv.change_application(source)
+		self._source = source
 
 	@property
 	def media_title(self):
@@ -214,6 +215,7 @@ class PhilipsTV(MediaPlayerDevice):
 		self._min_volume = self._tv.min_volume
 		self._max_volume = self._tv.max_volume
 		self._source_list = self._tv.app_source_list
+		self._source = self._tv.app_name
 		self._channel_id = self._tv.channel_id
 		self._channel_name = self._tv.channel_name
 		self._media_cont_type = self._tv.media_content_type_1
@@ -242,12 +244,13 @@ class PhilipsTVBase(object):
 		self.source_list_1 = None
 		self.app_source_list = None
 		self.applications = None
+		self.pkgNameToApp = None
 		self.channels = None
 		self.channel_id = None
 		self.media_content_type_1 = None
 		self.channel_name = None
 		self.StateC = None
-		self.app_name_1 = None
+		self.app_name = None
 		# The XTV app appears to have a bug that limits the nummber of SSL session to 100
 		# The code below forces the control to keep re-using a single connection
 		self._session = requests.Session()
@@ -286,7 +289,6 @@ class PhilipsTVBase(object):
 		self.getStateC()
 		self.getName()
 		self.getApplications()
-		self.getAppSourceList()
 		self.getChannelList()
 		self.getSourceList()
 		self.getAudiodata()
@@ -301,13 +303,10 @@ class PhilipsTVBase(object):
 				self.channel_name = r["channel"]["name"]
 				self.media_content_type_1 = "channel"
 			else:
-				r = self._getReq('applications')
-				if r:
-					for apl in r["applications"]:
-						if apl["intent"]["component"]["packageName"] == rr["component"]["packageName"]:
-							self.app_name_1 = apl["label"]
-							self.channel_name = self.app_name_1
-							self.media_content_type_1 = "app"
+				app = self.pkgNameToApp[rr["component"]["packageName"]]
+				self.app_name = app["label"]
+				self.channel_name = self.app_name
+				self.media_content_type_1 = "app"
 
 	def getName(self):
 		r = self._getReq('system/name')
@@ -325,17 +324,25 @@ class PhilipsTVBase(object):
 			for nm in self.channels:
 				_atemp.append(nm['name'])
 			self.source_list_1 = _atemp
+			
+	def change_channel(self, channeldata):
+		if channeldata:
+			for chn in self.channels:
+				if chn['name'] == channeldata:
+					self._postReq('activities/tv', {'channel':{'ccid':chn['ccid'],'preset':chn['preset'],'name':chn['name']},'channelList':{'id':'allter','version':'30'}})
 
 	def getApplications(self):
 		r = self._getReq('applications')
 		if r:
-			self.applications = r['applications']
-			
-	def getAppSourceList(self):
-		if self.applications:
-			self.app_source_list = []
-			for app in self.applications:
-				self.app_source_list.append(app['label'])
+			#self.applications = r['applications']
+			self.pkgNameToApp = {app['intent']['component']['packageName']:app for app in r['applications']}
+			self.applications = {app['label']:app for app in r['applications']}
+			self.app_source_list = self.applications.keys()
+	
+	def change_application(self, app_label):
+		if app_label:
+			app = self.applications[app_label]
+			self._postReq('activities/launch', app)
 
 	def getStateC(self):
 		r = self._getReq('powerstate')
@@ -369,18 +376,6 @@ class PhilipsTVBase(object):
 				return
 			self._postReq('audio/volume', {'current': targetlevel, 'muted': False})
 			self.volume = targetlevel
-
-	def change_channel(self, channeldata):
-		if channeldata:
-			for chn in self.channels:
-				if chn['name'] == channeldata:
-					self._postReq('activities/tv', {'channel':{'ccid':chn['ccid'],'preset':chn['preset'],'name':chn['name']},'channelList':{'id':'allter','version':'30'}})
-					
-	def change_application(self, application_label):
-	    if application_label:
-	        for app in self.applications:
-	            if app['label'] == application_label:
-	                self._postReq('activities/launch', app)
 
 	def sendKey(self, key):
 		self._postReq('input/key', {'key': key})
