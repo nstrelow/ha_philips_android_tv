@@ -299,11 +299,12 @@ class PhilipsTVBase(object):
         if rr:
             if rr["component"]["packageName"] == "org.droidtv.zapster":
                 r = self._getReq('activities/tv')
-                self.channel_id = r["channel"]["preset"]
-                self.channel_name = r["channel"]["name"]
+                self.channel_id = r.get("channel", {}).get("preset")
+                self.channel_name = r.get("channel", {}).get("name")
                 self.media_content_type_1 = "channel"
             else:
-                app = self.pkgNameToApp[rr["component"]["packageName"]]
+                pkgName = rr.get("component", {}).get("packageName")
+                app = self.pkgNameToApp.get(pkgName, {})
                 self.app_name = app["label"]
                 self.channel_name = self.app_name
                 self.media_content_type_1 = "app"
