@@ -10,6 +10,7 @@ import sys
 import voluptuous as vol
 
 from base64 import b64encode,b64decode
+from collections import OrderedDict
 from Crypto.Hash import SHA, HMAC
 from datetime import timedelta, datetime
 from homeassistant.components.media_player import (SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
@@ -345,7 +346,7 @@ class PhilipsTVBase(object):
         r = self._getReq('applications')
         if r:
             self.pkgNameToApp = {app['intent']['component']['packageName']:app for app in r['applications']}
-            self.applications = {app['label']:app for app in r['applications']}
+            self.applications = dict(sorted({app['label']:app for app in r['applications']}.items(), key=lambda a: a[0].upper()))
             self.app_source_list = list(self.applications.keys())
     
     def change_application(self, app_label):
