@@ -178,6 +178,11 @@ class PhilipsTV(MediaPlayerDevice):
         else:
             self._tv.sendKey('Rewind')
 
+    @property
+    def source(self):
+        """Return the current input source."""
+        return self._source
+
     def select_source(self, source):
         self._tv.change_application(source)
         self._source = source
