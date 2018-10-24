@@ -223,7 +223,7 @@ class PhilipsTV(MediaPlayerDevice):
         self._muted = self._tv.muted
         self._StateC = self._tv.StateC
         self._name = self._default_name
-        self._app_name = self._tv.app_name_1
+        self._app_name = self._tv.app_name
         if self._StateC == 'Standby':
             self._state = STATE_OFF
 
