@@ -308,11 +308,15 @@ class PhilipsTVBase(object):
                 self.channel_name = r.get("channel", {}).get("name")
                 self.media_content_type_1 = "channel"
             else:
-                pkgName = rr.get("component", {}).get("packageName")
-                app = self.pkgNameToApp.get(pkgName, {})
-                self.app_name = app["label"]
-                self.channel_name = self.app_name
                 self.media_content_type_1 = "app"
+                pkgName = rr.get("component", {}).get("packageName")
+                if pkgName == 'com.google.android.leanbacklauncher':
+                    self.app_name = 'LeanbackLauncher'
+                    self.channel_name = self.app_name
+                else:
+                    app = self.pkgNameToApp.get(pkgName, {})
+                    self.app_name = app["label"]
+                    self.channel_name = self.app_name
 
     def getName(self):
         r = self._getReq('system/name')
