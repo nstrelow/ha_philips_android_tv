@@ -311,14 +311,14 @@ class PhilipsTVBase(object):
         if self.on:
             rr = self._getReq('activities/current')
             if rr:
-                if rr["component"]["packageName"] == "org.droidtv.zapster":
+                pkgName = rr.get("component", {}).get("packageName")
+                if pkgName == "org.droidtv.zapster":
                     r = self._getReq('activities/tv')
                     self.channel_id = r.get("channel", {}).get("preset")
                     self.channel_name = r.get("channel", {}).get("name")
                     self.media_content_type_1 = "channel"
                 else:
                     self.media_content_type_1 = "app"
-                    pkgName = rr.get("component", {}).get("packageName")
                     if pkgName == 'com.google.android.leanbacklauncher':
                         self.app_name = 'LeanbackLauncher'
                         self.channel_name = self.app_name
