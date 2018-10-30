@@ -7,20 +7,21 @@ import random
 import requests
 import string
 import sys
+import time
 import voluptuous as vol
 
 from base64 import b64encode,b64decode
-from collections import OrderedDict
-from Crypto.Hash import SHA, HMAC
 from datetime import timedelta, datetime
 from homeassistant.components.media_player import (SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
                                                    SUPPORT_PREVIOUS_TRACK, SUPPORT_VOLUME_SET, PLATFORM_SCHEMA, SUPPORT_TURN_OFF, SUPPORT_TURN_ON,
                                                    SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_SELECT_SOURCE, MediaPlayerDevice)
-from homeassistant.const import (CONF_HOST, CONF_NAME, CONF_USERNAME, CONF_PASSWORD,
-                                 STATE_OFF, STATE_ON, STATE_UNKNOWN, STATE_PLAYING, STATE_PAUSED)
+from homeassistant.const import (CONF_HOST, CONF_MAC, CONF_NAME, CONF_USERNAME, CONF_PASSWORD,
+                                 STATE_OFF, STATE_IDLE, STATE_UNKNOWN, STATE_PLAYING, STATE_PAUSED)
 from homeassistant.util import Throttle
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
+
+REQUIREMENTS = ['wakeonlan==1.1.6']
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -32,6 +33,7 @@ SUPPORT_PHILIPS_2016 = SUPPORT_STOP | SUPPORT_TURN_OFF | SUPPORT_TURN_ON | SUPPO
 
 DEFAULT_DEVICE = 'default'
 DEFAULT_HOST = '127.0.0.1'
+DEFAULT_MAC = 'aa:aa:aa:aa:aa:aa'
 DEFAULT_USER = 'user'
 DEFAULT_PASS = 'pass'
 DEFAULT_NAME = 'Philips TV'
@@ -41,6 +43,7 @@ CONNFAILCOUNT = 5
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST, default=DEFAULT_HOST): cv.string,
+    vol.Required(CONF_MAC, default=DEFAULT_MAC): cv.string,
     vol.Required(CONF_USERNAME, default=DEFAULT_USER): cv.string,
     vol.Required(CONF_PASSWORD, default=DEFAULT_PASS): cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string
@@ -51,21 +54,25 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     """Set up the Philips 2016+ TV platform."""
     name = config.get(CONF_NAME)
     host = config.get(CONF_HOST)
+    mac = config.get(CONF_MAC)
     user = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     tvapi = PhilipsTVBase(host, user, password)
-    add_devices([PhilipsTV(tvapi, name)])
+    add_devices([PhilipsTV(tvapi, name, mac)])
 
 class PhilipsTV(MediaPlayerDevice):
     """Representation of a 2016+ Philips TV exposing the JointSpace API."""
 
-    def __init__(self, tv, name):
+    def __init__(self, tv, name, mac):
         """Initialize the TV."""
+        import wakeonlan
         self._tv = tv
         self._default_name = name
         self._name = name
-        self._StateC = None
-        self._state = STATE_PLAYING
+        self._mac = mac
+        self._wol = wakeonlan
+        self._state = STATE_UNKNOWN
+        self._on = False
         self._min_volume = 0
         self._max_volume = 60
         self._volume = 0
@@ -82,11 +89,6 @@ class PhilipsTV(MediaPlayerDevice):
     def name(self):
         """Return the device name."""
         return self._name
-
-    @property
-    def StateC(self):
-        """Return the device name."""
-        return self._StateC
 
     @property
     def should_poll(self):
@@ -106,9 +108,7 @@ class PhilipsTV(MediaPlayerDevice):
     @property
     def volume_level(self):
         """Volume level of the media player (0..1)."""
-        if self._StateC == 'On':
-        #if self._tv._getReq('audio/volume'):
-            return self._volume / self._max_volume
+        return self._volume / self._max_volume
 
     @property
     def is_volume_muted(self):
@@ -117,15 +117,18 @@ class PhilipsTV(MediaPlayerDevice):
 
     def turn_off(self):
         """Turn off the device."""
-        self._tv.sendKey('Standby')
-        if self._tv._getReq('powerstate') == 'Off':
-            self._state = STATE_OFF
+        self._tv.setPowerState('Standby')
 
     def turn_on(self):
         """Turn on the device."""
-        self._tv.sendKey('Standby')
-        if self._tv._getReq('powerstate') == 'On':
-            self._state = STATE_ON
+        #self._tv.setPowerState('On')
+        i = 0
+        while ((not self._tv.on) and (i < 15)):
+            if not self._on:
+                self.wol()
+            self._tv.setPowerState('On')
+            time.sleep(2)
+            i += 1
 
     def volume_up(self):
         """Send volume up command."""
@@ -151,7 +154,7 @@ class PhilipsTV(MediaPlayerDevice):
         self._state = STATE_PLAYING
 
     def media_play_pause(self):
-        if self._state == STATE_PAUSED:
+        if self._state == STATE_PAUSED or self._state == STATE_IDLE:
             self.media_play()
         elif self._state == STATE_PLAYING:
             self.media_pause()
@@ -191,7 +194,6 @@ class PhilipsTV(MediaPlayerDevice):
     @property
     def media_title(self):
         """Title of current playing media."""
-        #return self._channel_name
         if self.media_content_type == "channel":
             return '{} - {}'.format(self._channel_id, self._channel_name)
         else:
@@ -213,6 +215,9 @@ class PhilipsTV(MediaPlayerDevice):
     def app_name(self):
         return self._app_name
 
+    def wol(self):
+        if self._mac:
+            self._wol.send_magic_packet(self._mac)
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
@@ -227,10 +232,13 @@ class PhilipsTV(MediaPlayerDevice):
         self._media_cont_type = self._tv.media_content_type_1
         self._volume = self._tv.volume
         self._muted = self._tv.muted
-        self._StateC = self._tv.StateC
         self._name = self._default_name
         self._app_name = self._tv.app_name
-        if self._StateC == 'Standby':
+        self._on = self._tv.on
+        if self._tv.on:
+            if self._state == STATE_OFF or self._state == STATE_UNKNOWN:
+                self._state = STATE_IDLE
+        else:
             self._state = STATE_OFF
 
 class PhilipsTVBase(object):
@@ -239,7 +247,7 @@ class PhilipsTVBase(object):
         self._user = user
         self._password = password
         self._connfail = 0
-        self.on = None
+        self.on = False
         self.name = None
         self.min_volume = None
         self.max_volume = None
@@ -255,7 +263,6 @@ class PhilipsTVBase(object):
         self.channel_id = None
         self.media_content_type_1 = None
         self.channel_name = None
-        self.StateC = None
         self.app_name = None
         # The XTV app appears to have a bug that limits the nummber of SSL session to 100
         # The code below forces the control to keep re-using a single connection
@@ -292,7 +299,7 @@ class PhilipsTVBase(object):
             return False
 
     def update(self):
-        self.getStateC()
+        self.getState()
         self.getName()
         self.getApplications()
         self.getChannelList()
@@ -301,23 +308,27 @@ class PhilipsTVBase(object):
         self.getChannel()
 
     def getChannel(self):
-        rr = self._getReq('activities/current')
-        if rr:
-            if rr["component"]["packageName"] == "org.droidtv.zapster":
-                r = self._getReq('activities/tv')
-                self.channel_id = r.get("channel", {}).get("preset")
-                self.channel_name = r.get("channel", {}).get("name")
-                self.media_content_type_1 = "channel"
-            else:
-                self.media_content_type_1 = "app"
-                pkgName = rr.get("component", {}).get("packageName")
-                if pkgName == 'com.google.android.leanbacklauncher':
-                    self.app_name = 'LeanbackLauncher'
-                    self.channel_name = self.app_name
+        if self.on:
+            rr = self._getReq('activities/current')
+            if rr:
+                if rr["component"]["packageName"] == "org.droidtv.zapster":
+                    r = self._getReq('activities/tv')
+                    self.channel_id = r.get("channel", {}).get("preset")
+                    self.channel_name = r.get("channel", {}).get("name")
+                    self.media_content_type_1 = "channel"
                 else:
-                    app = self.pkgNameToApp.get(pkgName, {})
-                    self.app_name = app["label"]
-                    self.channel_name = self.app_name
+                    self.media_content_type_1 = "app"
+                    pkgName = rr.get("component", {}).get("packageName")
+                    if pkgName == 'com.google.android.leanbacklauncher':
+                        self.app_name = 'LeanbackLauncher'
+                        self.channel_name = self.app_name
+                    elif pkgName == 'NA':
+                        self.app_name = ''
+                        self.channel_name = ''
+                    else:
+                        app = self.pkgNameToApp.get(pkgName, {})
+                        self.app_name = app["label"]
+                        self.channel_name = self.app_name
 
     def getName(self):
         r = self._getReq('system/name')
@@ -354,10 +365,12 @@ class PhilipsTVBase(object):
             app = self.applications[app_label]
             self._postReq('activities/launch', app)
 
-    def getStateC(self):
+    def getState(self):
         r = self._getReq('powerstate')
         if r:
-            self.StateC = r['powerstate']
+            self.on = r['powerstate'] == 'On'
+        else:
+            self.on = False
 
     def getAudiodata(self):
         audiodata = self._getReq('audio/volume')
@@ -386,6 +399,9 @@ class PhilipsTVBase(object):
                 return
             self._postReq('audio/volume', {'current': targetlevel, 'muted': False})
             self.volume = targetlevel
+
+    def setPowerState(self, state):
+        self._postReq('powerstate', { 'powerstate': state})
 
     def sendKey(self, key):
         self._postReq('input/key', {'key': key})
