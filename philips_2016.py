@@ -121,7 +121,6 @@ class PhilipsTV(MediaPlayerDevice):
 
     def turn_on(self):
         """Turn on the device."""
-        #self._tv.setPowerState('On')
         i = 0
         while ((not self._tv.on) and (i < 15)):
             if not self._on:
