@@ -154,6 +154,7 @@ class PhilipsTV(MediaPlayerDevice):
         self._state = STATE_PLAYING
 
     def media_play_pause(self):
+        """Play or pause the media player."""
         if self._state == STATE_PAUSED or self._state == STATE_IDLE:
             self.media_play()
         elif self._state == STATE_PLAYING:
@@ -171,21 +172,21 @@ class PhilipsTV(MediaPlayerDevice):
 
     def media_next_track(self):
         """Send next track command."""
-        if self.media_content_type == "channel":
+        if self.media_content_type == 'channel':
             self._tv.sendKey('CursorUp')
         else:
             self._tv.sendKey('FastForward')
 
     def media_previous_track(self):
         """Send the previous track command."""
-        if self.media_content_type == "channel":
+        if self.media_content_type == 'channel':
             self._tv.sendKey('CursorDown')
         else:
             self._tv.sendKey('Rewind')
 
     @property
     def source(self):
-        """Return the current input source."""
+        '''Return the current input source.'''
         return self._source
 
     def select_source(self, source):
@@ -195,7 +196,7 @@ class PhilipsTV(MediaPlayerDevice):
     @property
     def media_title(self):
         """Title of current playing media."""
-        if self.media_content_type == "channel":
+        if self.media_content_type == 'channel':
             return '{} - {}'.format(self._channel_id, self._channel_name)
         else:
             return self._channel_name
@@ -312,14 +313,14 @@ class PhilipsTVBase(object):
         if self.on:
             rr = self._getReq('activities/current')
             if rr:
-                pkgName = rr.get("component", {}).get("packageName")
-                if pkgName == "org.droidtv.zapster":
+                pkgName = rr.get('component', {}).get('packageName')
+                if pkgName == 'org.droidtv.zapster':
                     r = self._getReq('activities/tv')
-                    self.channel_id = r.get("channel", {}).get("preset")
-                    self.channel_name = r.get("channel", {}).get("name")
-                    self.media_content_type_1 = "channel"
+                    self.channel_id = r.get('channel', {}).get('preset')
+                    self.channel_name = r.get('channel', {}).get('name')
+                    self.media_content_type_1 = 'channel'
                 else:
-                    self.media_content_type_1 = "app"
+                    self.media_content_type_1 = 'app'
                     if pkgName == 'com.google.android.leanbacklauncher':
                         self.app_name = 'LeanbackLauncher'
                         self.channel_name = self.app_name
@@ -328,7 +329,7 @@ class PhilipsTVBase(object):
                         self.channel_name = ''
                     else:
                         app = self.pkgNameToApp.get(pkgName, {})
-                        self.app_name = app["label"]
+                        self.app_name = app['label']
                         self.channel_name = self.app_name
 
     def getName(self):
