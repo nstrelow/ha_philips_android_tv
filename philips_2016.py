@@ -324,13 +324,20 @@ class PhilipsTVBase(object):
                     if pkgName == 'com.google.android.leanbacklauncher':
                         self.app_name = ''
                         self.channel_name = 'Home'
+                    elif pkgName == 'org.droidtv.nettvbrowser':
+                        self.app_name = '📱'
+                        self.channel_name = 'Net TV Browser'
                     elif pkgName == 'NA':
                         self.app_name = ''
                         self.channel_name = 'N/A'
                     else:
                         app = self.pkgNameToApp.get(pkgName, {})
-                        self.app_name = '📱'
-                        self.channel_name = app['label']
+                        if 'label' in app:
+                            self.app_name = '📱'
+                            self.channel_name = app['label']
+                        else:
+                            self.app_name = ''
+                            self.channel_name = pkgName
 
     def getName(self):
         r = self._getReq('system/name')
