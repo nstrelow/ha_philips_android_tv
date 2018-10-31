@@ -249,6 +249,7 @@ class PhilipsTVBase(object):
         self._password = password
         self._connfail = 0
         self.on = False
+        self.api_online = False
         self.name = None
         self.min_volume = None
         self.max_volume = None
@@ -276,11 +277,11 @@ class PhilipsTVBase(object):
                 self._connfail -= 1
                 return None
             resp = self._session.get(BASE_URL.format(self._host, path), verify=False, auth=HTTPDigestAuth(self._user, self._password), timeout=TIMEOUT)
-            self.on = True
+            self.api_online = True
             return json.loads(resp.text)
         except requests.exceptions.RequestException as err:
             self._connfail = CONNFAILCOUNT
-            self.on = False
+            self.api_online = False
             return None
 
     def _postReq(self, path, data):
@@ -289,14 +290,14 @@ class PhilipsTVBase(object):
                 self._connfail -= 1
                 return False
             resp = self._session.post(BASE_URL.format(self._host, path), data=json.dumps(data), verify=False, auth=HTTPDigestAuth(self._user, self._password), timeout=TIMEOUT)
-            self.on = True
+            self.api_online = True
             if resp.status_code == 200:
                 return True
             else:
                 return False
         except requests.exceptions.RequestException as err:
             self._connfail = CONNFAILCOUNT
-            self.on = False
+            self.api_online = False
             return False
 
     def update(self):
