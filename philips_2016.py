@@ -167,6 +167,7 @@ class PhilipsTV(MediaPlayerDevice):
     def media_stop(self):
         """Send media stop command to media player."""
         self._tv.sendKey('Stop')
+        self._state = STATE_IDLE
 
     def media_next_track(self):
         """Send next track command."""
