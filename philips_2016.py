@@ -190,7 +190,7 @@ class PhilipsTV(MediaPlayerDevice):
         return self._source
 
     def select_source(self, source):
-        self._tv.change_application(source)
+        self._tv.change_source(source)
         self._source = source
 
     @property
@@ -227,8 +227,8 @@ class PhilipsTV(MediaPlayerDevice):
         self._tv.update()
         self._min_volume = self._tv.min_volume
         self._max_volume = self._tv.max_volume
-        self._source_list = self._tv.app_source_list
-        self._source = self._tv.app_name
+        self._source_list = self._tv.app_source_list + self._tv.channel_source_list
+        self._source = self._tv.app_name + ' ' + self._tv.channel_name
         self._channel_id = self._tv.channel_id
         self._channel_name = self._tv.channel_name
         self._media_cont_type = self._tv.media_content_type_1
@@ -257,11 +257,11 @@ class PhilipsTVBase(object):
         self.muted = None
         self.sources = None
         self.source_id = None
-        self.source_list_1 = None
-        self.app_source_list = None
         self.applications = None
+        self.app_source_list = None
         self.pkgNameToApp = None
         self.channels = None
+        self.channel_source_list = None
         self.channel_id = None
         self.media_content_type_1 = None
         self.channel_name = None
@@ -304,8 +304,7 @@ class PhilipsTVBase(object):
         self.getState()
         self.getName()
         self.getApplications()
-        self.getChannelList()
-        self.getSourceList()
+        self.getChannels()
         self.getAudiodata()
         self.getChannel()
 
@@ -316,56 +315,49 @@ class PhilipsTVBase(object):
                 pkgName = rr.get('component', {}).get('packageName')
                 if pkgName == 'org.droidtv.zapster':
                     r = self._getReq('activities/tv')
-                    self.channel_id = r.get('channel', {}).get('preset')
-                    self.channel_name = r.get('channel', {}).get('name')
+                    self.channel_id = r.get('channel', {}).get('preset', 'N/A')
+                    self.channel_name = r.get('channel', {}).get('name', 'N/A')
+                    self.app_name = '📺'
                     self.media_content_type_1 = 'channel'
                 else:
                     self.media_content_type_1 = 'app'
                     if pkgName == 'com.google.android.leanbacklauncher':
-                        self.app_name = 'LeanbackLauncher'
-                        self.channel_name = self.app_name
+                        self.app_name = ''
+                        self.channel_name = 'Home'
                     elif pkgName == 'NA':
                         self.app_name = ''
-                        self.channel_name = ''
+                        self.channel_name = 'N/A'
                     else:
                         app = self.pkgNameToApp.get(pkgName, {})
-                        self.app_name = app['label']
-                        self.channel_name = self.app_name
+                        self.app_name = '📱'
+                        self.channel_name = app['label']
 
     def getName(self):
         r = self._getReq('system/name')
         if r:
             self.name = r['name']
 
-    def getChannelList(self):
+    def getChannels(self):
         r = self._getReq('channeldb/tv/channelLists/all')
         if r:
-            self.channels = r['Channel']
-    
-    def getSourceList(self):
-        if self.channels:
-            _atemp = []
-            for nm in self.channels:
-                _atemp.append(nm['name'])
-            self.source_list_1 = _atemp
-            
-    def change_channel(self, channeldata):
-        if channeldata:
-            for chn in self.channels:
-                if chn['name'] == channeldata:
-                    self._postReq('activities/tv', {'channel':{'ccid':chn['ccid'],'preset':chn['preset'],'name':chn['name']},'channelList':{'id':'allter','version':'30'}})
+            self.channels = dict(sorted({chn['name']:chn for chn in r['Channel']}.items(), key=lambda a: a[0].upper()))
+            self.channel_source_list = ['📺 ' + channelName for channelName in self.channels.keys()]
 
     def getApplications(self):
         r = self._getReq('applications')
         if r:
             self.pkgNameToApp = {app['intent']['component']['packageName']:app for app in r['applications']}
             self.applications = dict(sorted({app['label']:app for app in r['applications']}.items(), key=lambda a: a[0].upper()))
-            self.app_source_list = list(self.applications.keys())
-    
-    def change_application(self, app_label):
-        if app_label:
-            app = self.applications[app_label]
-            self._postReq('activities/launch', app)
+            self.app_source_list = ['📱 ' + appLabel for appLabel in self.applications.keys()]
+
+    def change_source(self, source_label):
+        if source_label:
+            if source_label.startswith('📱'):
+                app = self.applications[source_label[2:]]
+                self._postReq('activities/launch', app)
+            elif source_label.startswith('📺'):
+                chn = self.channels[source_label[2:]]
+                self._postReq('activities/tv', {'channel':{'ccid':chn['ccid'],'preset':chn['preset'],'name':chn['name']},'channelList':{'id':'allter','version':'30'}})
 
     def getState(self):
         r = self._getReq('powerstate')
