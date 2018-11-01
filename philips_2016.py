@@ -259,7 +259,7 @@ class PhilipsTVBase(object):
         self.source_id = None
         self.applications = None
         self.app_source_list = None
-        self.pkgNameToApp = None
+        self.classNameToApp = None
         self.channels = None
         self.channel_source_list = None
         self.channel_id = None
@@ -313,6 +313,7 @@ class PhilipsTVBase(object):
             rr = self._getReq('activities/current')
             if rr:
                 pkgName = rr.get('component', {}).get('packageName')
+                className = rr.get('component', {}).get('className')
                 if pkgName == 'org.droidtv.zapster':
                     r = self._getReq('activities/tv')
                     self.channel_id = r.get('channel', {}).get('preset', 'N/A')
@@ -327,16 +328,19 @@ class PhilipsTVBase(object):
                     elif pkgName == 'org.droidtv.nettvbrowser':
                         self.app_name = '📱'
                         self.channel_name = 'Net TV Browser'
+                    elif pkgName == 'org.droidtv.settings':
+                        self.app_name = self.classNameToApp.get(className, {}).get('label', className) if className != 'NA' else ''
+                        self.channel_name = 'Settings'
                     elif pkgName == 'NA':
                         self.app_name = ''
                         self.channel_name = 'N/A'
                     else:
-                        app = self.pkgNameToApp.get(pkgName, {})
+                        app = self.classNameToApp.get(className, {})
                         if 'label' in app:
                             self.app_name = '📱'
                             self.channel_name = app['label']
                         else:
-                            self.app_name = ''
+                            self.app_name = className
                             self.channel_name = pkgName
 
     def getName(self):
@@ -353,7 +357,7 @@ class PhilipsTVBase(object):
     def getApplications(self):
         r = self._getReq('applications')
         if r:
-            self.pkgNameToApp = {app['intent']['component']['packageName']:app for app in r['applications']}
+            self.classNameToApp = {app['intent']['component']['className']:app for app in r['applications']}
             self.applications = dict(sorted({app['label']:app for app in r['applications']}.items(), key=lambda a: a[0].upper()))
             self.app_source_list = ['📱 ' + appLabel for appLabel in self.applications.keys()]
 
