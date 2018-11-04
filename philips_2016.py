@@ -327,9 +327,9 @@ class PhilipsTVBase(object):
                         self.channel_name = r.get('channel', {}).get('name', 'N/A')
                         self.app_name = '📺'
                     else:
-                        self.app_name = ''
                         self.channel_name = 'N/A'
                         self.channel_id = 'N/A'
+                        self.app_name = '📺'
                 else:
                     self.media_content_type = 'app'
                     if pkgName == 'com.google.android.leanbacklauncher':
