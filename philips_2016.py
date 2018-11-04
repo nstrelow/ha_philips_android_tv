@@ -73,6 +73,7 @@ class PhilipsTV(MediaPlayerDevice):
         self._wol = wakeonlan
         self._state = STATE_UNKNOWN
         self._on = False
+        self._api_online = False
         self._min_volume = 0
         self._max_volume = 60
         self._volume = 0
@@ -123,7 +124,7 @@ class PhilipsTV(MediaPlayerDevice):
         """Turn on the device."""
         i = 0
         while ((not self._tv.on) and (i < 15)):
-            if not self._on:
+            if not self._api_online:
                 self.wol()
             self._tv.setPowerState('On')
             time.sleep(2)
@@ -236,6 +237,7 @@ class PhilipsTV(MediaPlayerDevice):
         self._name = self._default_name
         self._app_name = self._tv.app_name
         self._on = self._tv.on
+        self._api_online = self._tv.api_online
         if self._tv.on:
             if self._state == STATE_OFF or self._state == STATE_UNKNOWN:
                 self._state = STATE_IDLE
