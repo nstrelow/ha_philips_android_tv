@@ -319,12 +319,16 @@ class PhilipsTVBase(object):
             if rr:
                 pkgName = rr.get('component', {}).get('packageName')
                 className = rr.get('component', {}).get('className')
-                if pkgName == 'org.droidtv.zapster':
-                    r = self._getReq('activities/tv')
-                    self.channel_id = r.get('channel', {}).get('preset', 'N/A')
-                    self.channel_name = r.get('channel', {}).get('name', 'N/A')
-                    self.app_name = '📺'
+                if pkgName == 'org.droidtv.zapster' or pkgName == 'NA':
                     self.media_content_type = 'channel'
+                    r = self._getReq('activities/tv')
+                    if r:
+                        self.channel_id = r.get('channel', {}).get('preset', 'N/A')
+                        self.channel_name = r.get('channel', {}).get('name', 'N/A')
+                        self.app_name = '📺'
+                    else:
+                        self.app_name = ''
+                        self.channel_name = 'N/A'
                 else:
                     self.media_content_type = 'app'
                     if pkgName == 'com.google.android.leanbacklauncher':
@@ -336,9 +340,6 @@ class PhilipsTVBase(object):
                     elif pkgName == 'org.droidtv.settings':
                         self.app_name = self.classNameToApp.get(className, {}).get('label', className) if className != 'NA' else ''
                         self.channel_name = 'Settings'
-                    elif pkgName == 'NA':
-                        self.app_name = ''
-                        self.channel_name = 'N/A'
                     else:
                         app = self.classNameToApp.get(className, {})
                         if 'label' in app:
