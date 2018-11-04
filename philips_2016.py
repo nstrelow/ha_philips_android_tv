@@ -16,7 +16,7 @@ from homeassistant.components.media_player import (SUPPORT_STOP, SUPPORT_PLAY, S
                                                    SUPPORT_PREVIOUS_TRACK, SUPPORT_VOLUME_SET, PLATFORM_SCHEMA, SUPPORT_TURN_OFF, SUPPORT_TURN_ON,
                                                    SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_SELECT_SOURCE, MediaPlayerDevice)
 from homeassistant.const import (CONF_HOST, CONF_MAC, CONF_NAME, CONF_USERNAME, CONF_PASSWORD,
-                                 STATE_OFF, STATE_IDLE, STATE_UNKNOWN, STATE_PLAYING, STATE_PAUSED)
+                                 STATE_OFF, STATE_ON, STATE_IDLE, STATE_UNKNOWN, STATE_PLAYING, STATE_PAUSED)
 from homeassistant.util import Throttle
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
@@ -244,7 +244,9 @@ class PhilipsTV(MediaPlayerDevice):
         self._on = self._tv.on
         self._api_online = self._tv.api_online
         if self._tv.on:
-            if self._state == STATE_OFF or self._state == STATE_UNKNOWN:
+            if self._state == STATE_OFF or self._state == STATE_UNKNOWN or self._media_cont_type != 'app':
+                self._state = STATE_ON
+            elif self._media_cont_type == 'app':
                 self._state = STATE_IDLE
         else:
             self._state = STATE_OFF
@@ -335,6 +337,7 @@ class PhilipsTVBase(object):
                     if pkgName == 'com.google.android.leanbacklauncher':
                         self.app_name = ''
                         self.channel_name = 'Home'
+                        self.media_content_type = ''
                     elif pkgName == 'org.droidtv.nettvbrowser':
                         self.app_name = '📱'
                         self.channel_name = 'Net TV Browser'
