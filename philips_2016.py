@@ -125,9 +125,12 @@ class PhilipsTV(MediaPlayerDevice):
     def turn_on(self):
         """Turn on the device."""
         i = 0
-        while ((not self._tv.on) and (i < 15)):
+        # TODO: This is blocking and self._tv.on will not change until 20 iterations are done
+        while ((not self._tv.on) and (i < 20)):
             if not self._api_online:
+                _LOGGER.info("Sending WOL: %s", i)
                 self.wol()
+            _LOGGER.info("Setting powerstate: %s", i)
             self._tv.setPowerState('On')
             time.sleep(2)
             i += 1
