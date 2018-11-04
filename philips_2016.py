@@ -78,13 +78,13 @@ class PhilipsTV(MediaPlayerDevice):
         self._max_volume = 60
         self._volume = 0
         self._muted = False
-        self._channel_id = None
-        self._channel_name = None
+        self._channel_id = ''
+        self._channel_name = ''
         self._connfail = 0
-        self._source = None
+        self._source = ''
         self._source_list = []
-        self._media_cont_type = None
-        self._app_name = None
+        self._media_cont_type = ''
+        self._app_name = ''
 
     @property
     def name(self):
@@ -231,7 +231,7 @@ class PhilipsTV(MediaPlayerDevice):
         self._source = self._tv.app_name + ' ' + self._tv.channel_name
         self._channel_id = self._tv.channel_id
         self._channel_name = self._tv.channel_name
-        self._media_cont_type = self._tv.media_content_type_1
+        self._media_cont_type = self._tv.media_content_type
         self._volume = self._tv.volume
         self._muted = self._tv.muted
         self._name = self._default_name
@@ -252,21 +252,20 @@ class PhilipsTVBase(object):
         self._connfail = 0
         self.on = False
         self.api_online = False
-        self.name = None
-        self.min_volume = None
-        self.max_volume = None
-        self.volume = None
-        self.muted = None
-        self.source_id = None
+        self.name = ''
+        self.min_volume = 0
+        self.max_volume = 60
+        self.volume = 0
+        self.muted = False
         self.applications = {}
         self.app_source_list = []
         self.classNameToApp = {}
         self.channels = {}
         self.channel_source_list = []
-        self.channel_id = None
-        self.media_content_type_1 = None
-        self.channel_name = None
-        self.app_name = None
+        self.channel_id = ''
+        self.media_content_type = ''
+        self.channel_name = ''
+        self.app_name = ''
         # The XTV app appears to have a bug that limits the nummber of SSL session to 100
         # The code below forces the control to keep re-using a single connection
         self._session = requests.Session()
@@ -320,9 +319,9 @@ class PhilipsTVBase(object):
                     self.channel_id = r.get('channel', {}).get('preset', 'N/A')
                     self.channel_name = r.get('channel', {}).get('name', 'N/A')
                     self.app_name = '📺'
-                    self.media_content_type_1 = 'channel'
+                    self.media_content_type = 'channel'
                 else:
-                    self.media_content_type_1 = 'app'
+                    self.media_content_type = 'app'
                     if pkgName == 'com.google.android.leanbacklauncher':
                         self.app_name = ''
                         self.channel_name = 'Home'
