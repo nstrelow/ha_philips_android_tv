@@ -119,8 +119,7 @@ class PhilipsTV(MediaPlayerDevice):
     def turn_off(self):
         """Turn off the device."""
         self._tv.setPowerState('Standby')
-        self._on = False
-        self._state = STATE_OFF
+        self.update()
 
     def turn_on(self):
         """Turn on the device."""
