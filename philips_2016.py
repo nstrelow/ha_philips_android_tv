@@ -320,7 +320,7 @@ class PhilipsTVBase(object):
             if rr:
                 pkgName = rr.get('component', {}).get('packageName')
                 className = rr.get('component', {}).get('className')
-                if pkgName == 'org.droidtv.zapster' or pkgName == 'NA':
+                if pkgName == 'org.droidtv.zapster' or pkgName == 'org.droidtv.playtv' or pkgName == 'NA':
                     self.media_content_type = 'channel'
                     r = self._getReq('activities/tv')
                     if r:
