@@ -258,7 +258,6 @@ class PhilipsTVBase(object):
         self._connfail = 0
         self.on = False
         self.api_online = False
-        self.name = ''
         self.min_volume = 0
         self.max_volume = 60
         self.volume = 0
@@ -308,7 +307,6 @@ class PhilipsTVBase(object):
 
     def update(self):
         self.getState()
-        self.getName()
         self.getApplications()
         self.getChannels()
         self.getAudiodata()
@@ -351,11 +349,6 @@ class PhilipsTVBase(object):
                         else:
                             self.app_name = className
                             self.channel_name = pkgName
-
-    def getName(self):
-        r = self._getReq('system/name')
-        if r:
-            self.name = r['name']
 
     def getChannels(self):
         r = self._getReq('channeldb/tv/channelLists/all')
