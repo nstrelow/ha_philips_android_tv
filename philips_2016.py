@@ -21,6 +21,10 @@ from homeassistant.util import Throttle
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
 
+# Workaround to suppress warnings about SSL certificates in Home Assistant log
+import urllib3
+urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
+
 REQUIREMENTS = ['wakeonlan==1.1.6']
 
 _LOGGER = logging.getLogger(__name__)
@@ -274,6 +278,7 @@ class PhilipsTVBase(object):
         # The XTV app appears to have a bug that limits the nummber of SSL session to 100
         # The code below forces the control to keep re-using a single connection
         self._session = requests.Session()
+        self._session.verify = False
         self._session.mount('https://', HTTPAdapter(pool_connections=1))
 
     def _getReq(self, path):
