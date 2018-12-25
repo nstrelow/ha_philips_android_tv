@@ -37,7 +37,7 @@ media_player:
 
 ### Special requirements for turning the TV back on from Standby
 Essentially wake-on-lan wakes up the API part of the TV. Then the TV is able to receive a command to set the power state to on.
-This is currently not working reliably, but can be improved a lot, when programmed properly (e.g. a nice way to wait for the TV to start the API and check if it's online).
+Currently this isn't completely reliable , but can be improved a lot, when programmed properly (e.g. a nice way to wait for the TV to start the API and check if it's online).
 
 You have to enable WoWLAN under Settings->Wireless&Networks->Wired&Wifi->Switch on with Wi-Fi (WoWLAN)
 And add the Wifi MAC address to your config.
