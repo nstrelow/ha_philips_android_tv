@@ -1,6 +1,33 @@
 # Home Assistant Philips TV (2016+) media player component
 Home Assistant custom component for the newer (2016+) Philips Android TVs
 
+## Changing source (app) using a script
+I am using the icons :iphone: and :tv: to distinguish between apps and tv channels.
+IMO this looks nice in UI, and you need to include the icon, a space and then the name in your automations.
+
+Example of source: `"📱 Kodi"`
+You can also copy what you want from States pages under the property source_list of your TV.
+
+Example using the built-in script editor. Go to Configuration->Scripts.
+![Script editor example for starting Kodi](https://raw.githubusercontent.com/nstrelow/ha_philips_2016/master/scripteditor_example.jpg)
+
+
+YAML does not support the emojis. So if you do not want to use the script editor, you can use the escaped character:
+
+* :iphone: = \U0001F4F1
+* :tv: = \U0001F4FA
+
+Example for YouTube in scripts.yaml:
+
+```
+youtube:
+  alias: YouTube
+  sequence:
+  - data:
+      entity_id: media_player.tv
+      source: "\U0001F4F1 YouTube"
+    service: media_player.select_source
+```
 
 ## Installation
 
