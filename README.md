@@ -43,7 +43,7 @@ pip3 install -r requirements.txt
 ```
 3. Execute pairing. A PIN code will appear on your TV. Input that in your terminal
 ```
-python3 philips.py --host IP of TV> pair
+python3 philips.py --host <IP of TV> pair
 ```
 Now you will have a username and password you can use in your HA configuration.
 
