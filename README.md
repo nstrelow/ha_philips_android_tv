@@ -50,6 +50,7 @@ Now you will have a username and password you can use in your HA configuration.
 ### Installing and configuring the custom component
 1. Create directories `custom_components/media_player/` in the config directory.
 2. Add the [philips_2016.py](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_2016.py) script from this repo under `<config_dir>/custom_components/media_player/philips_2016.py`
+DISCLAIMER: Since 0.88, `<config_dir>/custom_components/philips_2016/media_player.py`, because of a [migration](https://developers.home-assistant.io/blog/2019/02/19/the-great-migration.html). The old way will stop working at some point.
 3. Add the following to your _configuration.yaml_ using your username and password from the pairing process. You can leave out the mac, if you do not care using HA to turn your TV on/off.
 ```
 media_player:
