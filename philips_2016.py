@@ -377,15 +377,22 @@ class PhilipsTVBase(object):
     def get_channels(self):
         r = self._get_req('channeldb/tv/channelLists/all')
         if r:
-            self.channels = dict(sorted({chn['name']:chn for chn in r['Channel']}.items(), key=lambda a: a[0].upper()))
-            self.channel_source_list = ['📺 ' + channelName for channelName in self.channels.keys()]
+            self.channels = dict(sorted({chn['name']: chn
+                                         for chn in r['Channel']}.items(),
+                                         key=lambda a: a[0].upper()))
+            self.channel_source_list = ['📺 ' + channelName
+                                        for channelName in self.channels.keys()]
 
     def get_applications(self):
         r = self._get_req('applications')
         if r:
-            self.classNameToApp = {app['intent']['component']['className']: app for app in r['applications']}
-            self.applications = dict(sorted({app['label']: app for app in r['applications']}.items(), key=lambda a: a[0].upper()))
-            self.app_source_list = ['📱 ' + appLabel for appLabel in self.applications.keys()]
+            self.classNameToApp = {app['intent']['component']['className']: app
+                                   for app in r['applications']}
+            self.applications = dict(sorted({app['label']: app
+                                             for app in r['applications']}.items(),
+                                             key=lambda a: a[0].upper()))
+            self.app_source_list = ['📱 ' + appLabel
+                                    for appLabel in self.applications.keys()]
 
     def change_source(self, source_label):
         if source_label:
