@@ -6,7 +6,6 @@
         "visit_repo": "https://github.com/olbjan/ha_philips_2016",
         "changelog": [],
         "resources": [
-            "https://raw.githubusercontent.com/olbjan/ha_philips_2016/master/philips_android_tv/__init__.py",
             "https://raw.githubusercontent.com/olbjan/ha_philips_2016/master/philips_android_tv/media_player.py",
             "https://raw.githubusercontent.com/olbjan/ha_philips_2016/master/philips_android_tv/manifest.json"
         ]
