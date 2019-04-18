@@ -1,0 +1,1 @@
+"""The philips_2016 component."""
