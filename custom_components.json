@@ -1,7 +1,7 @@
 {
     "philips_android_tv": {
         "version": "0.0.1",
-        "local_location": "/custom_components/alexa_media/__init__.py",
+        "local_location": "/custom_components/philips_android_tv/__init__.py",
         "remote_location": "https://raw.githubusercontent.com/olbjan/ha_philips_2016/master/philips_android_tv/__init__.py",
         "visit_repo": "https://github.com/olbjan/ha_philips_2016",
         "changelog": []
