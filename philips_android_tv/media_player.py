@@ -355,26 +355,12 @@ class PhilipsTVBase(object):
                         else:
                             self.app_name = className
                             self.channel_name = pkgName
-# Here we get the full list of channels from the TV
+
     def getChannels(self):
-        p = self._getReq('channeldb/tv/channelLists/all')
-        q = self._getReq('channeldb/tv/favoriteLists/1')
-        r = p
+        r = self._getReq('channeldb/tv/channelLists/all')
         if r:
-#        if q:
-#            favchannels = dict({chn['ccid']:chn for chn in q['channels']}.items())
             self.channels = dict(sorted({chn['name']:chn for chn in r['Channel']}.items(), key=lambda a: a[0].upper()))
-# Disabled to only show limited source list:
-#            self.channel_source_list = ['📺 ' + channelName for channelName in self.channels.keys()]
-        allchannels = dict({chn['ccid']:chn for chn in p['Channel']}.items())
-        favchannels = dict({chn['ccid']:chn for chn in q['channels']}.items())
-        q['Channel'] = q.pop('channels')
-        ccid= ([Channel['ccid'] for Channel in q['Channel']])
-        favchannel = {key: allchannels[key] for key in ccid}
-        self.channel_source_list = []
-        for favchannel_ccid, favchannel_ccinfo in favchannel.items():
-            self.channel_source_list.extend(['📺 ' + favchannel_ccinfo['name']])
-        self.channel_source_list.sort()
+            self.channel_source_list = ['📺 ' + channelName for channelName in self.channels.keys()]
 
     def getApplications(self):
         r = self._getReq('applications')
