@@ -42,7 +42,6 @@ DEFAULT_MAC = 'aa:aa:aa:aa:aa:aa'
 DEFAULT_USER = 'user'
 DEFAULT_PASS = 'pass'
 DEFAULT_NAME = 'Philips TV'
-DEFAULT_FAV = false
 BASE_URL = 'https://{0}:1926/6/{1}'
 TIMEOUT = 5.0
 CONNFAILCOUNT = 5
@@ -53,7 +52,7 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_USERNAME, default=DEFAULT_USER): cv.string,
     vol.Required(CONF_PASSWORD, default=DEFAULT_PASS): cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-    vol.Optional(CONF_FAV_ONLY, default=DEFAULT_FAV): cv.boolean
+    vol.Optional(CONF_FAV_ONLY, default=False): cv.boolean
 })
 
 # pylint: disable=unused-argument
@@ -270,6 +269,7 @@ class PhilipsTVBase(object):
         self.max_volume = 60
         self.volume = 0
         self.muted = False
+        self.favorite_only = favorite_only
         self.applications = {}
         self.app_source_list = []
         self.classNameToApp = {}
@@ -317,7 +317,7 @@ class PhilipsTVBase(object):
     def update(self):
         self.getState()
         self.getApplications()
-        if favorite_only:
+        if self.favorite_only:
             self.getFavoriteChannels()
         else:
             self.getChannels()
