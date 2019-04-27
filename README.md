@@ -48,13 +48,13 @@ python3 philips.py --host <IP of TV> pair
 Now you will have a username and password you can use in your HA configuration.
 
 ### Installing and configuring the custom component
-1. Create directories `custom_components/media_player/` in the config directory.
-2. Add the [philips_2016.py](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_2016.py) script from this repo under `<config_dir>/custom_components/media_player/philips_2016.py`
-DISCLAIMER: Since 0.88, copy the `philips_2016` folder to `<config_dir>/custom_components/`, because of [The Great Migration](https://developers.home-assistant.io/blog/2019/02/19/the-great-migration.html). The old way will stop working at some point.
+1. Create directories `custom_components/philips_android_tv/` in the config directory.
+2. Starting with 0.91: Add the [media_player.py](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_android_tv/media_player.py) [__init__.py](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_android_tv/__init__.py) and [manifest.json](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_android_tv/manifest.json) files from this repo under `<config_dir>/custom_components/philips_android_tv/media_player.py` etc.
+DISCLAIMER: The custom component and its folder needed to be renamed as only characters and underscore are permitted for component names. The numbers 2016 are not allowed anymore. See (https://developers.home-assistant.io/docs/en/creating_integration_manifest.html#domain)
 3. Add the following to your _configuration.yaml_ using your username and password from the pairing process. You can leave out the mac, if you do not care using HA to turn your TV on/off.
 ```
 media_player:
-  - platform: philips_2016
+  - platform: philips_android_tv
     name: TV
     host: 192.168.1.111
     mac: aa:aa:aa:aa:aa:aa
