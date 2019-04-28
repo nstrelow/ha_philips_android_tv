@@ -1,6 +1,10 @@
 # Home Assistant Philips TV (2016+) media player component
 Home Assistant custom component for the newer (2016+) Philips Android TVs
 
+### custom_updater support
+Now supports [custom_updater](https://github.com/custom-components/custom_updater), a component to manage your custom components.
+Add `https://raw.githubusercontent.com/nstrelow/ha_philips_2016/master/custom_components.json` to `component_urls`.
+
 ## Changing source (app) using a script
 I am using the icons :iphone: and :tv: to distinguish between apps and tv channels.
 IMO this looks nice in UI, and you need to include the icon, a space and then the name in your automations.
@@ -61,6 +65,9 @@ media_player:
     username: xxxxx
     password: xxxxx
 ```
+
+Optionally add `favorite_channels_only: true` to only display the channels in your favorites list. Thanks to @olbjan.
+
 4. Restart home-assistant
 
 ### Special requirements for turning the TV back on from Standby
