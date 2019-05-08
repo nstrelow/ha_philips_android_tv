@@ -141,7 +141,7 @@ class PhilipsTV(MediaPlayerDevice):
                 _LOGGER.info("Sending WOL: %s", i)
                 self.wol()
             _LOGGER.info("Setting powerstate: %s", i)
-            self._tv.setPowerState('On')
+            self._tv.set_power_state('On')
             time.sleep(2)
             i += 1
 
