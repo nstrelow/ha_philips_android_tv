@@ -1,0 +1,14 @@
+{
+    "philips_android_tv": {
+        "version": "0.0.2",
+        "local_location": "/custom_components/philips_android_tv/__init__.py",
+        "remote_location": "https://raw.githubusercontent.com/nstrelow/ha_philips_2016/master/philips_android_tv/__init__.py",
+        "visit_repo": "https://github.com/nstrelow/ha_philips_2016",
+        "changelog": [],
+        "resources": [
+            "https://raw.githubusercontent.com/nstrelow/ha_philips_2016/master/philips_android_tv/media_player.py",
+            "https://raw.githubusercontent.com/nstrelow/ha_philips_2016/master/philips_android_tv/manifest.json"
+        ]
+    }
+
+}
