@@ -279,7 +279,7 @@ class PhilipsTVBase(object):
         self.favorite_only = favorite_only
         self.applications = {}
         self.app_source_list = []
-        self.classNameToApp = {}
+        self.class_name_to_app = {}
         self.channels = {}
         self.channel_source_list = []
         self.channel_id = ''
@@ -346,9 +346,9 @@ class PhilipsTVBase(object):
         if self.on:
             rr = self._get_req('activities/current')
             if rr:
-                pkgName = rr.get('component', {}).get('packageName', '')
-                className = rr.get('component', {}).get('className', '')
-                if pkgName in ('org.droidtv.zapster', 'org.droidtv.playtv','NA'):
+                pkg_name = rr.get('component', {}).get('packageName', '')
+                class_name = rr.get('component', {}).get('className', '')
+                if pkg_name in ('org.droidtv.zapster', 'org.droidtv.playtv','NA'):
                     self.media_content_type = 'channel'
                     r = self._get_req('activities/tv')
                     if r:
@@ -361,24 +361,24 @@ class PhilipsTVBase(object):
                         self.app_name = '📺'
                 else:
                     self.media_content_type = 'app'
-                    if pkgName == 'com.google.android.leanbacklauncher':
+                    if pkg_name == 'com.google.android.leanbacklauncher':
                         self.app_name = ''
                         self.channel_name = 'Home'
                         self.media_content_type = ''
-                    elif pkgName == 'org.droidtv.nettvbrowser':
+                    elif pkg_name == 'org.droidtv.nettvbrowser':
                         self.app_name = '📱'
                         self.channel_name = 'Net TV Browser'
-                    elif pkgName == 'org.droidtv.settings':
-                        self.app_name = self.classNameToApp.get(className, {}).get('label', className) if className != 'NA' else ''
+                    elif pkg_name == 'org.droidtv.settings':
+                        self.app_name = self.class_name_to_app.get(class_name, {}).get('label', class_name) if class_name != 'NA' else ''
                         self.channel_name = 'Settings'
                     else:
-                        app = self.classNameToApp.get(className, {})
+                        app = self.class_name_to_app.get(class_name, {})
                         if 'label' in app:
                             self.app_name = '📱'
                             self.channel_name = app['label']
                         else:
-                            self.app_name = className
-                            self.channel_name = pkgName
+                            self.app_name = class_name
+                            self.channel_name = pkg_name
 
     def get_channels(self):
         r = self._get_req('channeldb/tv/channelLists/all')
@@ -398,21 +398,19 @@ class PhilipsTVBase(object):
                 sorted({chn['name']: chn for chn in r['Channel']}.items(),
                        key=lambda a: a[0].upper()))
         all_channels = dict({chn['ccid']: chn for chn in r['Channel']}.items())
-        fav_channels = dict(
-            {chn['ccid']: chn for chn in favorite_res['channels']}.items())
         favorite_channels = favorite_res.pop('channels')
         ccids = ([Channel['ccid'] for Channel in favorite_channels])
-        favchannel = {key: all_channels[key] for key in ccids}
+        fav_channel = {key: all_channels[key] for key in ccids}
         self.channel_source_list = []
-        for favchannel_ccid, favchannel_ccinfo in favchannel.items():
-            self.channel_source_list.append('📺 ' + favchannel_ccinfo['name'])
+        for fav_channel_ccid, fav_channel_ccinfo in fav_channel.items():
+            self.channel_source_list.append('📺 ' + fav_channel_ccinfo['name'])
         self.channel_source_list.sort()
 
     def get_applications(self):
         r = self._get_req('applications')
         if r:
-            self.classNameToApp = {app['intent']['component']['className']: app
-                                   for app in r['applications']}
+            self.class_name_to_app = {app['intent']['component']['className']: app
+                                      for app in r['applications']}
             self.applications = dict(sorted({app['label']: app
                                              for app in r['applications']}.items(),
                                              key=lambda a: a[0].upper()))
