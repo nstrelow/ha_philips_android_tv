@@ -391,8 +391,8 @@ class PhilipsTVBase(object):
 
     # Filtering out favorite channels here
     def get_favorite_channels(self):
-        r = self._getReq('channeldb/tv/channelLists/all')
-        favorite_res = self._getReq('channeldb/tv/favoriteLists/1')
+        r = self._get_req('channeldb/tv/channelLists/all')
+        favorite_res = self._get_req('channeldb/tv/favoriteLists/1')
         if r:
             self.channels = dict(
                 sorted({chn['name']: chn for chn in r['Channel']}.items(),
