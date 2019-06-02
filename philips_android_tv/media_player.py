@@ -1,26 +1,30 @@
 """Philips TV"""
 import homeassistant.helpers.config_validation as cv
-import argparse
 import json
 import logging
-import random
-import requests
-import string
-import sys
 import time
 import voluptuous as vol
+import wakeonlan
 
-from base64 import b64encode,b64decode
-from datetime import timedelta, datetime
-from homeassistant.components.media_player import (MediaPlayerDevice, PLATFORM_SCHEMA)
-from homeassistant.components.media_player.const import (SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
-                                                   SUPPORT_PREVIOUS_TRACK, SUPPORT_VOLUME_SET, SUPPORT_TURN_OFF, SUPPORT_TURN_ON,
-                                                   SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP, SUPPORT_SELECT_SOURCE)
-from homeassistant.const import (CONF_HOST, CONF_MAC, CONF_NAME, CONF_USERNAME, CONF_PASSWORD,
-                                 STATE_OFF, STATE_ON, STATE_IDLE, STATE_UNKNOWN, STATE_PLAYING, STATE_PAUSED)
+from datetime import timedelta
+from homeassistant.components.media_player import (
+    MediaPlayerDevice, PLATFORM_SCHEMA
+)
+from homeassistant.components.media_player.const import (
+    SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
+    SUPPORT_PREVIOUS_TRACK, SUPPORT_VOLUME_SET, SUPPORT_TURN_OFF,
+    SUPPORT_TURN_ON, SUPPORT_VOLUME_MUTE, SUPPORT_VOLUME_STEP,
+    SUPPORT_SELECT_SOURCE
+)
+from homeassistant.const import (
+    CONF_HOST, CONF_MAC, CONF_NAME, CONF_USERNAME, CONF_PASSWORD, STATE_OFF,
+    STATE_ON, STATE_IDLE, STATE_UNKNOWN, STATE_PLAYING, STATE_PAUSED
+)
 from homeassistant.util import Throttle
+from requests import Session
 from requests.auth import HTTPDigestAuth
 from requests.adapters import HTTPAdapter
+from requests.exceptions import RequestException
 
 # Workaround to suppress warnings about SSL certificates in Home Assistant log
 import urllib3
@@ -32,9 +36,11 @@ CONF_FAV_ONLY = 'favorite_channels_only'
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=5)
 
-SUPPORT_PHILIPS_2016 = SUPPORT_STOP | SUPPORT_TURN_OFF | SUPPORT_TURN_ON | SUPPORT_VOLUME_STEP | \
-                       SUPPORT_VOLUME_MUTE | SUPPORT_VOLUME_SET |SUPPORT_NEXT_TRACK | \
-                       SUPPORT_PAUSE | SUPPORT_PREVIOUS_TRACK | SUPPORT_PLAY | SUPPORT_SELECT_SOURCE
+SUPPORT_PHILIPS_2016 = SUPPORT_TURN_OFF | SUPPORT_TURN_ON | \
+                       SUPPORT_VOLUME_STEP | SUPPORT_VOLUME_MUTE | \
+                       SUPPORT_VOLUME_SET | SUPPORT_NEXT_TRACK | \
+                       SUPPORT_PREVIOUS_TRACK | SUPPORT_PAUSE | \
+                       SUPPORT_PLAY | SUPPORT_STOP | SUPPORT_SELECT_SOURCE
 
 DEFAULT_DEVICE = 'default'
 DEFAULT_HOST = '127.0.0.1'
@@ -67,12 +73,12 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     tvapi = PhilipsTVBase(host, user, password, favorite_only)
     add_devices([PhilipsTV(tvapi, name, mac)])
 
+
 class PhilipsTV(MediaPlayerDevice):
     """Representation of a 2016+ Philips TV exposing the JointSpace API."""
 
     def __init__(self, tv, name, mac):
         """Initialize the TV."""
-        import wakeonlan
         self._tv = tv
         self._default_name = name
         self._name = name
@@ -125,79 +131,79 @@ class PhilipsTV(MediaPlayerDevice):
 
     def turn_off(self):
         """Turn off the device."""
-        self._tv.setPowerState('Standby')
+        self._tv.set_power_state('Standby')
         self.update()
 
     def turn_on(self):
         """Turn on the device."""
         i = 0
         # TODO: This is blocking and self._tv.on will not change until 20 iterations are done
-        while ((not self._tv.on) and (i < 20)):
+        while not self._tv.on and i < 20:
             if not self._api_online:
                 _LOGGER.info("Sending WOL: %s", i)
                 self.wol()
             _LOGGER.info("Setting powerstate: %s", i)
-            self._tv.setPowerState('On')
+            self._tv.set_power_state('On')
             time.sleep(2)
             i += 1
 
     def volume_up(self):
         """Send volume up command."""
-        self._tv.sendKey('VolumeUp')
+        self._tv.send_key('VolumeUp')
 
     def volume_down(self):
         """Send volume down command."""
-        self._tv.sendKey('VolumeDown')
+        self._tv.send_key('VolumeDown')
 
     def set_volume_level(self, volume):
         """Set volume level, range 0..1."""
         tv_volume = volume * self._max_volume
-        self._tv.setVolume(tv_volume)
+        self._tv.set_volume(tv_volume)
 
 
     def mute_volume(self, mute):
         """Send mute command."""
-        self._tv.sendKey('Mute')
+        self._tv.send_key('Mute')
 
     def media_play(self):
         """Send media play command to media player."""
-        self._tv.sendKey('Play')
+        self._tv.send_key('Play')
         self._state = STATE_PLAYING
 
     def media_play_pause(self):
         """Play or pause the media player."""
-        if self._state == STATE_PAUSED or self._state == STATE_IDLE:
+        if self._state in (STATE_PAUSED, STATE_IDLE):
             self.media_play()
         elif self._state == STATE_PLAYING:
             self.media_pause()
 
     def media_pause(self):
         """Send media pause command to media player."""
-        self._tv.sendKey('Pause')
+        self._tv.send_key('Pause')
         self._state = STATE_PAUSED
 
     def media_stop(self):
         """Send media stop command to media player."""
-        self._tv.sendKey('Stop')
+        self._tv.send_key('Stop')
         self._state = STATE_IDLE
 
     def media_next_track(self):
         """Send next track command."""
         if self.media_content_type == 'channel':
-            self._tv.sendKey('CursorUp')
+            self._tv.send_key('CursorUp')
         else:
-            self._tv.sendKey('FastForward')
+            self._tv.send_key('FastForward')
 
     def media_previous_track(self):
         """Send the previous track command."""
         if self.media_content_type == 'channel':
-            self._tv.sendKey('CursorDown')
+            self._tv.send_key('CursorDown')
         else:
-            self._tv.sendKey('Rewind')
+            self._tv.send_key('Rewind')
 
     @property
     def source(self):
-        '''Return the current input source.'''
+        """Return the current input source."""
         return self._source
 
     def select_source(self, source):
@@ -250,12 +256,13 @@ class PhilipsTV(MediaPlayerDevice):
         self._on = self._tv.on
         self._api_online = self._tv.api_online
         if self._tv.on:
-            if self._state == STATE_OFF or self._state == STATE_UNKNOWN or self._media_cont_type != 'app':
+            if self._state in (STATE_OFF, STATE_UNKNOWN) or self._media_cont_type != 'app':
                 self._state = STATE_ON
             elif self._media_cont_type == 'app':
                 self._state = STATE_IDLE
         else:
             self._state = STATE_OFF
+
 
 class PhilipsTVBase(object):
     def __init__(self, host, user, password, favorite_only):
@@ -272,7 +279,7 @@ class PhilipsTVBase(object):
         self.favorite_only = favorite_only
         self.applications = {}
         self.app_source_list = []
-        self.classNameToApp = {}
+        self.class_name_to_app = {}
         self.channels = {}
         self.channel_source_list = []
         self.channel_id = ''
@@ -281,58 +288,69 @@ class PhilipsTVBase(object):
         self.app_name = ''
         # The XTV app appears to have a bug that limits the nummber of SSL session to 100
         # The code below forces the control to keep re-using a single connection
-        self._session = requests.Session()
+        self._session = Session()
         self._session.verify = False
         self._session.mount('https://', HTTPAdapter(pool_connections=1))
 
-    def _getReq(self, path):
+    def _get_req(self, path):
         try:
             if self._connfail:
                 self._connfail -= 1
                 return None
-            resp = self._session.get(BASE_URL.format(self._host, path), verify=False, auth=HTTPDigestAuth(self._user, self._password), timeout=TIMEOUT)
+            resp = self._session.get(
+                BASE_URL.format(self._host, path),
+                verify=False,
+                auth=HTTPDigestAuth(self._user, self._password),
+                timeout=TIMEOUT
+            )
             self.api_online = True
             return json.loads(resp.text)
-        except requests.exceptions.RequestException as err:
+        except RequestException:
             self._connfail = CONNFAILCOUNT
             self.api_online = False
             return None
 
-    def _postReq(self, path, data):
+    def _post_req(self, path, data):
         try:
             if self._connfail:
                 self._connfail -= 1
                 return False
-            resp = self._session.post(BASE_URL.format(self._host, path), data=json.dumps(data), verify=False, auth=HTTPDigestAuth(self._user, self._password), timeout=TIMEOUT)
+            resp = self._session.post(
+                BASE_URL.format(self._host, path),
+                data=json.dumps(data),
+                verify=False,
+                auth=HTTPDigestAuth(self._user, self._password),
+                timeout=TIMEOUT
+            )
             self.api_online = True
             if resp.status_code == 200:
                 return True
             else:
                 return False
-        except requests.exceptions.RequestException as err:
+        except RequestException:
             self._connfail = CONNFAILCOUNT
             self.api_online = False
             return False
 
     def update(self):
-        self.getState()
-        self.getApplications()
+        self.get_state()
+        self.get_applications()
         if self.favorite_only:
-            self.getFavoriteChannels()
+            self.get_favorite_channels()
         else:
-            self.getChannels()
-        self.getAudiodata()
-        self.getChannel()
+            self.get_channels()
+        self.get_audiodata()
+        self.get_channel()
 
-    def getChannel(self):
+    def get_channel(self):
         if self.on:
-            rr = self._getReq('activities/current')
+            rr = self._get_req('activities/current')
             if rr:
-                pkgName = rr.get('component', {}).get('packageName')
-                className = rr.get('component', {}).get('className')
-                if pkgName == 'org.droidtv.zapster' or pkgName == 'org.droidtv.playtv' or pkgName == 'NA':
+                pkg_name = rr.get('component', {}).get('packageName', '')
+                class_name = rr.get('component', {}).get('className', '')
+                if pkg_name in ('org.droidtv.zapster', 'org.droidtv.playtv','NA'):
                     self.media_content_type = 'channel'
-                    r = self._getReq('activities/tv')
+                    r = self._get_req('activities/tv')
                     if r:
                         self.channel_id = r.get('channel', {}).get('preset', 'N/A')
                         self.channel_name = r.get('channel', {}).get('name', 'N/A')
@@ -343,72 +361,91 @@ class PhilipsTVBase(object):
                         self.app_name = '📺'
                 else:
                     self.media_content_type = 'app'
-                    if pkgName == 'com.google.android.leanbacklauncher':
+                    if pkg_name == 'com.google.android.leanbacklauncher':
                         self.app_name = ''
                         self.channel_name = 'Home'
                         self.media_content_type = ''
-                    elif pkgName == 'org.droidtv.nettvbrowser':
+                    elif pkg_name == 'org.droidtv.nettvbrowser':
                         self.app_name = '📱'
                         self.channel_name = 'Net TV Browser'
-                    elif pkgName == 'org.droidtv.settings':
-                        self.app_name = self.classNameToApp.get(className, {}).get('label', className) if className != 'NA' else ''
+                    elif pkg_name == 'org.droidtv.settings':
+                        self.app_name = self.class_name_to_app.get(class_name, {}).get('label', class_name) if class_name != 'NA' else ''
                         self.channel_name = 'Settings'
                     else:
-                        app = self.classNameToApp.get(className, {})
+                        app = self.class_name_to_app.get(class_name, {})
                         if 'label' in app:
                             self.app_name = '📱'
                             self.channel_name = app['label']
                         else:
-                            self.app_name = className
-                            self.channel_name = pkgName
+                            self.app_name = class_name
+                            self.channel_name = pkg_name
 
-    def getChannels(self):
-        r = self._getReq('channeldb/tv/channelLists/all')
+    def get_channels(self):
+        r = self._get_req('channeldb/tv/channelLists/all')
         if r:
-            self.channels = dict(sorted({chn['name']:chn for chn in r['Channel']}.items(), key=lambda a: a[0].upper()))
-            self.channel_source_list = ['📺 ' + channelName for channelName in self.channels.keys()]
+            self.channels = dict(sorted({chn['name']: chn
+                                         for chn in r['Channel']}.items(),
+                                         key=lambda a: a[0].upper()))
+            self.channel_source_list = ['📺 ' + channelName
+                                        for channelName in self.channels.keys()]
 
     # Filtering out favorite channels here
-    def getFavoriteChannels(self):
+    def get_favorite_channels(self):
         r = self._getReq('channeldb/tv/channelLists/all')
-        favoriteRes = self._getReq('channeldb/tv/favoriteLists/1')
+        favorite_res = self._getReq('channeldb/tv/favoriteLists/1')
         if r:
-            self.channels = dict(sorted({chn['name']:chn for chn in r['Channel']}.items(), key=lambda a: a[0].upper()))
-        allchannels = dict({chn['ccid']:chn for chn in r['Channel']}.items())
-        favchannels = dict({chn['ccid']:chn for chn in favoriteRes['channels']}.items())
-        favoriteChannels = favoriteRes.pop('channels')
-        ccids = ([Channel['ccid'] for Channel in favoriteChannels])
-        favchannel = {key: allchannels[key] for key in ccids}
+            self.channels = dict(
+                sorted({chn['name']: chn for chn in r['Channel']}.items(),
+                       key=lambda a: a[0].upper()))
+        all_channels = dict({chn['ccid']: chn for chn in r['Channel']}.items())
+        favorite_channels = favorite_res.pop('channels')
+        ccids = ([Channel['ccid'] for Channel in favorite_channels])
+        fav_channel = {key: all_channels[key] for key in ccids}
         self.channel_source_list = []
-        for favchannel_ccid, favchannel_ccinfo in favchannel.items():
-            self.channel_source_list.append('📺 ' + favchannel_ccinfo['name'])
+        for fav_channel_ccid, fav_channel_ccinfo in fav_channel.items():
+            self.channel_source_list.append('📺 ' + fav_channel_ccinfo['name'])
         self.channel_source_list.sort()
 
-    def getApplications(self):
-        r = self._getReq('applications')
+    def get_applications(self):
+        r = self._get_req('applications')
         if r:
-            self.classNameToApp = {app['intent']['component']['className']:app for app in r['applications']}
-            self.applications = dict(sorted({app['label']:app for app in r['applications']}.items(), key=lambda a: a[0].upper()))
-            self.app_source_list = ['📱 ' + appLabel for appLabel in self.applications.keys()]
+            self.class_name_to_app = {app['intent']['component']['className']: app
+                                      for app in r['applications']}
+            self.applications = dict(sorted({app['label']: app
+                                             for app in r['applications']}.items(),
+                                             key=lambda a: a[0].upper()))
+            self.app_source_list = ['📱 ' + appLabel
+                                    for appLabel in self.applications.keys()]
 
     def change_source(self, source_label):
         if source_label:
             if source_label.startswith('📱'):
                 app = self.applications[source_label[2:]]
-                self._postReq('activities/launch', app)
+                self._post_req('activities/launch', app)
             elif source_label.startswith('📺'):
                 chn = self.channels[source_label[2:]]
-                self._postReq('activities/tv', {'channel':{'ccid':chn['ccid'],'preset':chn['preset'],'name':chn['name']},'channelList':{'id':'allter','version':'30'}})
+                data = {
+                    'channel': {
+                        'ccid': chn['ccid'],
+                        'preset': chn['preset'],
+                        'name': chn['name']
+                    },
+                    'channelList': {
+                        'id': 'allter',
+                        'version': '30'
+                    }
+                }
+                self._post_req('activities/tv', data)
 
-    def getState(self):
-        r = self._getReq('powerstate')
+    def get_state(self):
+        r = self._get_req('powerstate')
         if r:
             self.on = r['powerstate'] == 'On'
         else:
             self.on = False
 
-    def getAudiodata(self):
-        audiodata = self._getReq('audio/volume')
+    def get_audiodata(self):
+        audiodata = self._get_req('audio/volume')
         if audiodata:
             self.min_volume = int(audiodata['min'])
             self.max_volume = int(audiodata['max'])
@@ -420,23 +457,23 @@ class PhilipsTVBase(object):
             self.volume = None
             self.muted = None
 
-    def setVolume(self, level):
+    def set_volume(self, level):
         if level:
             if self.min_volume != 0 or not self.max_volume:
-                self.getAudiodata()
+                self.get_audiodata()
             if not self.on:
                 return
             try:
                 targetlevel = int(level)
             except ValueError:
                 return
-            if targetlevel < self.min_volume + 1 or targetlevel > self.max_volume:
+            if (self.min_volume + 1) < targetlevel > self.max_volume:
                 return
-            self._postReq('audio/volume', {'current': targetlevel, 'muted': False})
+            self._post_req('audio/volume', {'current': targetlevel, 'muted': False})
             self.volume = targetlevel
 
-    def setPowerState(self, state):
-        self._postReq('powerstate', { 'powerstate': state})
+    def set_power_state(self, state):
+        self._post_req('powerstate', {'powerstate': state})
 
-    def sendKey(self, key):
-        self._postReq('input/key', {'key': key})
+    def send_key(self, key):
+        self._post_req('input/key', {'key': key})
