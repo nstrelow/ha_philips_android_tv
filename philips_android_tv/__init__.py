@@ -1,3 +1,3 @@
 """The philips_android_tv component."""
 
-__version__ = '0.0.2'
+__version__ = '0.0.3'
