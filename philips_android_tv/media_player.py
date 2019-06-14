@@ -307,6 +307,7 @@ class PhilipsTVBase(object):
             _LOGGER.warn(
                 "TV is not returning JSON. Either the authentification failed or your TV does not support calling %s.",
                 path)
+            _LOGGER.info("Response of TV: %s", resp.text)
             return None
         except RequestException:
             self._connfail = CONNFAILCOUNT
