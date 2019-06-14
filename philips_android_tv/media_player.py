@@ -160,7 +160,6 @@ class PhilipsTV(MediaPlayerDevice):
         tv_volume = volume * self._max_volume
         self._tv.set_volume(tv_volume)
 
-
     def mute_volume(self, mute):
         """Send mute command."""
         self._tv.send_key('Mute')
@@ -301,10 +300,14 @@ class PhilipsTVBase(object):
                 BASE_URL.format(self._host, path),
                 verify=False,
                 auth=HTTPDigestAuth(self._user, self._password),
-                timeout=TIMEOUT
-            )
+                timeout=TIMEOUT)
             self.api_online = True
             return json.loads(resp.text)
+        except json.JSONDecodeError:
+            _LOGGER.warn(
+                "TV is not returning JSON. Either the authentification failed or your TV does not support calling %s.",
+                path)
+            return None
         except RequestException:
             self._connfail = CONNFAILCOUNT
             self.api_online = False
@@ -320,8 +323,7 @@ class PhilipsTVBase(object):
                 data=json.dumps(data),
                 verify=False,
                 auth=HTTPDigestAuth(self._user, self._password),
-                timeout=TIMEOUT
-            )
+                timeout=TIMEOUT)
             self.api_online = True
             if resp.status_code == 200:
                 return True
@@ -393,18 +395,25 @@ class PhilipsTVBase(object):
     def get_favorite_channels(self):
         r = self._get_req('channeldb/tv/channelLists/all')
         favorite_res = self._get_req('channeldb/tv/favoriteLists/1')
-        if r:
+        if r and favorite_res:
             self.channels = dict(
-                sorted({chn['name']: chn for chn in r['Channel']}.items(),
-                       key=lambda a: a[0].upper()))
-        all_channels = dict({chn['ccid']: chn for chn in r['Channel']}.items())
-        favorite_channels = favorite_res.pop('channels')
-        ccids = ([Channel['ccid'] for Channel in favorite_channels])
-        fav_channel = {key: all_channels[key] for key in ccids}
-        self.channel_source_list = []
-        for fav_channel_ccid, fav_channel_ccinfo in fav_channel.items():
-            self.channel_source_list.append('📺 ' + fav_channel_ccinfo['name'])
-        self.channel_source_list.sort()
+                sorted(
+                    {chn['name']: chn
+                     for chn in r['Channel']}.items(),
+                    key=lambda a: a[0].upper()))
+            all_channels = dict({chn['ccid']: chn
+                                 for chn in r['Channel']}.items())
+            favorite_channels = favorite_res.pop('channels')
+            ccids = ([Channel['ccid'] for Channel in favorite_channels])
+            fav_channel = {key: all_channels[key] for key in ccids}
+            self.channel_source_list = []
+            for fav_channel_ccid, fav_channel_ccinfo in fav_channel.items():
+                self.channel_source_list.append('📺 ' +
+                                                fav_channel_ccinfo['name'])
+            self.channel_source_list.sort()
+        else:
+            _LOGGER.warn("Favorites not supported for this TV", path)
+            return self.get_channels()
 
     def get_applications(self):
         r = self._get_req('applications')
