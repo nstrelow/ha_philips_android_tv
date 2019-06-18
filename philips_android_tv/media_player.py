@@ -413,7 +413,7 @@ class PhilipsTVBase(object):
                                                 fav_channel_ccinfo['name'])
             self.channel_source_list.sort()
         else:
-            _LOGGER.warn("Favorites not supported for this TV", path)
+            _LOGGER.warn("Favorites not supported for this TV")
             return self.get_channels()
 
     def get_applications(self):
