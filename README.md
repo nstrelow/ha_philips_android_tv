@@ -1,9 +1,11 @@
 # Home Assistant Philips TV (2016+) media player component
 Home Assistant custom component for the newer (2016+) Philips Android TVs
 
-### custom_updater support
-Now supports [custom_updater](https://github.com/custom-components/custom_updater), a component to manage your custom components.
-Add `https://raw.githubusercontent.com/nstrelow/ha_philips_2016/master/custom_components.json` to `component_urls`.
+### HACS (Home Assistant Community Store) support
+HACS is replacing the deprecated `custom_updater`. You will be able to easily find, install and update `philips_android_tv` and other components.
+
+I filled a PR to add this component to the default store. Until it is added, you can manually add `philips_android_tv` in _Settings_ under _Custom Integration Repositories_.
+
 
 ## Changing source (app) using a script
 I am using the icons :iphone: and :tv: to distinguish between apps and tv channels.
@@ -52,11 +54,13 @@ python3 philips.py --host <IP of TV> pair
 Now you will have a username and password you can use in your HA configuration.
 
 ### Installing and configuring the custom component
-1. Create directories `custom_components/philips_android_tv/` in the config directory.
-2. Starting with 0.91: Add the [media_player.py](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_android_tv/media_player.py) [__init__.py](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_android_tv/__init__.py) and [manifest.json](https://github.com/nstrelow/ha_philips_2016/blob/master/philips_android_tv/manifest.json) files from this repo under `<config_dir>/custom_components/philips_android_tv/media_player.py` etc.
-DISCLAIMER: The custom component and its folder needed to be renamed as only characters and underscore are permitted for component names. The numbers 2016 are not allowed anymore. See (https://developers.home-assistant.io/docs/en/creating_integration_manifest.html#domain)
-3. Add the following to your _configuration.yaml_ using your username and password from the pairing process. You can leave out the mac, if you do not care using HA to turn your TV on/off.
-```
+1. Using the tool of choice open the directory (folder) for your HA configuration (where you find configuration.yaml).
+2. If you do not have a `custom_components` directory (folder) there, you need to create it.
+3. In the custom_components directory (folder) create a new folder called `philips_android_tv`.
+4. Download all the files from the `custom_components/philips_android_tv/` directory (folder) in this repository.
+5. Place the files you downloaded in the new directory (folder) `custom_components/philips_android_tv/` you created.
+6. Add the following to your _configuration.yaml_ using your username and password from the pairing process. You can leave out the mac, if you do not care using HA to turn your TV on/off.
+```yaml
 media_player:
   - platform: philips_android_tv
     name: TV
@@ -70,7 +74,18 @@ Optionally add `favorite_channels_only: true` to only display the channels in yo
 
 4. Restart home-assistant
 
-### Special requirements for turning the TV back on from Standby
+## Configuration options
+
+Key | Type | Required | Description
+-- | -- | -- | --
+`name` | `string` | `True` | Name of the integration
+`username` | `string` | `True` | Username from the pairing process
+`password` | `string` | `True` | Password from the pairing process  
+`host` | `string` | `True` | The IP of the TV
+`mac` | `string` | `False` | The MAC of the TV (Wifi MAC required for WoWLAN)
+`favorite_channels_only` | `boolean` | `False` | Enable/disable only showing the favorite channels
+
+## Special requirements for turning the TV back on from Standby
 Essentially wake-on-lan wakes up the API part of the TV. Then the TV is able to receive a command to set the power state to on.
 Currently this isn't completely reliable , but can be improved a lot, when programmed properly (e.g. a nice way to wait for the TV to start the API and check if it's online).
 
