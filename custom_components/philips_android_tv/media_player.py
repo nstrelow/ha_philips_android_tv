@@ -4,7 +4,6 @@ import json
 import logging
 import time
 import voluptuous as vol
-import wakeonlan
 
 from datetime import timedelta
 from homeassistant.components.media_player import (
@@ -79,6 +78,7 @@ class PhilipsTV(MediaPlayerDevice):
 
     def __init__(self, tv, name, mac):
         """Initialize the TV."""
+        import wakeonlan
         self._tv = tv
         self._default_name = name
         self._name = name
@@ -136,16 +136,28 @@ class PhilipsTV(MediaPlayerDevice):
 
     def turn_on(self):
         """Turn on the device."""
+        if not self._mac:
+            _LOGGER.error("Cannot turn on TV without mac address")
+            return None
         i = 0
-        # TODO: This is blocking and self._tv.on will not change until 20 iterations are done
-        while not self._tv.on and i < 20:
-            if not self._api_online:
-                _LOGGER.info("Sending WOL: %s", i)
-                self.wol()
-            _LOGGER.info("Setting powerstate: %s", i)
+        while not self._api_online and i < 10:
+            _LOGGER.info("Sending WOL [try #%s]", i)
+            self.wol()
+            time.sleep(3)
+            self._tv.set_power_state('On')
+            i += 1
+        if not self._api_online:
+            _LOGGER.warn("TV WakeOnLan is not working. Check mac address and make sure TV WakeOnLan is activated. If running inside docker, make sure to use host network.")
+            return None
+        i = 0
+        while not self._tv.on and i < 10:
+            _LOGGER.info("Turning on TV OS [try #%s]", i)
             self._tv.set_power_state('On')
             time.sleep(2)
+            self._tv.get_state()
             i += 1
+        if not self._tv.on:
+            _LOGGER.warn("Cannot turn on the TV")
 
     def volume_up(self):
         """Send volume up command."""
@@ -234,8 +246,7 @@ class PhilipsTV(MediaPlayerDevice):
         return self._app_name
 
     def wol(self):
-        if self._mac:
-            self._wol.send_magic_packet(self._mac)
+        self._wol.send_magic_packet(self._mac)
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
