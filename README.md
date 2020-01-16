@@ -94,6 +94,7 @@ And add the Wifi MAC address to your config.
 
 I believe this can also work using the LAN MAC, but I am running it currently with the WoWLAN feature.
 
+Note - you can install Wakelock Revamped (https://github.com/d4rken/wakelock-revamp/releases/tag/v3.2.0), or from Play Store (https://play.google.com/store/apps/details?id=eu.thedarken.wldonate&hl=en) to your Philips TV you can enable the `Processor` amd `Screen dimmed` wakelocks and have it start on boot to keep your TV awake at all times, even when you press the power button. The TV should use more energy than in regular sleep mode but should be always available.
 
 ## Contribution
 I am always happy to see PRs and will merge or comment on them.
