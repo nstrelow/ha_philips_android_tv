@@ -32,6 +32,7 @@ urllib3.disable_warnings(urllib3.exceptions.InsecureRequestWarning)
 _LOGGER = logging.getLogger(__name__)
 
 CONF_FAV_ONLY = 'favorite_channels_only'
+CONF_HIDE_CHANNELS = 'hide_channels'
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=5)
 
@@ -57,7 +58,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_USERNAME, default=DEFAULT_USER): cv.string,
     vol.Required(CONF_PASSWORD, default=DEFAULT_PASS): cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
-    vol.Optional(CONF_FAV_ONLY, default=False): cv.boolean
+    vol.Optional(CONF_FAV_ONLY, default=False): cv.boolean,
+    vol.Optional(CONF_HIDE_CHANNELS, default=False): cv.boolean
 })
 
 # pylint: disable=unused-argument
@@ -69,7 +71,8 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     user = config.get(CONF_USERNAME)
     password = config.get(CONF_PASSWORD)
     favorite_only = config.get(CONF_FAV_ONLY)
-    tvapi = PhilipsTVBase(host, user, password, favorite_only)
+    hide_channels = config.get(CONF_HIDE_CHANNELS)
+    tvapi = PhilipsTVBase(host, user, password, favorite_only, hide_channels)
     add_devices([PhilipsTV(tvapi, name, mac)])
 
 
@@ -275,7 +278,7 @@ class PhilipsTV(MediaPlayerDevice):
 
 
 class PhilipsTVBase(object):
-    def __init__(self, host, user, password, favorite_only):
+    def __init__(self, host, user, password, favorite_only, hide_channels):
         self._host = host
         self._user = user
         self._password = password
@@ -287,6 +290,7 @@ class PhilipsTVBase(object):
         self.volume = 0
         self.muted = False
         self.favorite_only = favorite_only
+        self.hide_channels = hide_channels
         self.applications = {}
         self.app_source_list = []
         self.class_name_to_app = {}
@@ -349,10 +353,11 @@ class PhilipsTVBase(object):
     def update(self):
         self.get_state()
         self.get_applications()
-        if self.favorite_only:
-            self.get_favorite_channels()
-        else:
-            self.get_channels()
+        if not self.hide_channels:
+            if self.favorite_only:
+                self.get_favorite_channels()
+            else:
+                self.get_channels()
         self.get_audiodata()
         self.get_channel()
 
