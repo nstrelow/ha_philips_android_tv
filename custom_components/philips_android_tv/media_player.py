@@ -7,7 +7,7 @@ import voluptuous as vol
 
 from datetime import timedelta
 from homeassistant.components.media_player import (
-    MediaPlayerDevice, PLATFORM_SCHEMA
+    MediaPlayerEntity, PLATFORM_SCHEMA
 )
 from homeassistant.components.media_player.const import (
     SUPPORT_STOP, SUPPORT_PLAY, SUPPORT_NEXT_TRACK, SUPPORT_PAUSE,
@@ -76,7 +76,7 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     add_devices([PhilipsTV(tvapi, name, mac)])
 
 
-class PhilipsTV(MediaPlayerDevice):
+class PhilipsTV(MediaPlayerEntity):
     """Representation of a 2016+ Philips TV exposing the JointSpace API."""
 
     def __init__(self, tv, name, mac):
