@@ -472,8 +472,10 @@ class PhilipsTVBase(object):
     def get_state(self):
         r = self._get_req('powerstate')
         if r:
+            self.api_online = True
             self.on = r['powerstate'] == 'On'
         else:
+            self.api_online = False
             self.on = False
 
     def get_audiodata(self):
