@@ -125,7 +125,10 @@ class PhilipsTV(MediaPlayerEntity):
     @property
     def volume_level(self):
         """Volume level of the media player (0..1)."""
-        return self._volume / self._max_volume
+        if self._volume is None or self._max_volume is None:
+            return 0
+        else:
+            return self._volume / self._max_volume
 
     @property
     def is_volume_muted(self):
@@ -274,7 +277,10 @@ class PhilipsTV(MediaPlayerEntity):
             elif self._media_cont_type == 'app':
                 self._state = STATE_IDLE
         else:
-            self._state = STATE_OFF
+            if self._api_online:
+                self._state = STATE_OFF
+            else:
+                self._state = STATE_UNKNOWN
 
 
 class PhilipsTVBase(object):
