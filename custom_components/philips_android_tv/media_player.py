@@ -358,14 +358,15 @@ class PhilipsTVBase(object):
 
     def update(self):
         self.get_state()
-        self.get_applications()
-        if not self.hide_channels:
-            if self.favorite_only:
-                self.get_favorite_channels()
-            else:
-                self.get_channels()
-        self.get_audiodata()
-        self.get_channel()
+        if self.api_online:
+            self.get_applications()
+            if not self.hide_channels:
+                if self.favorite_only:
+                    self.get_favorite_channels()
+                else:
+                    self.get_channels()
+            self.get_audiodata()
+            self.get_channel()
 
     def get_channel(self):
         if self.on:
@@ -472,10 +473,8 @@ class PhilipsTVBase(object):
     def get_state(self):
         r = self._get_req('powerstate')
         if r:
-            self.api_online = True
             self.on = r['powerstate'] == 'On'
         else:
-            self.api_online = False
             self.on = False
 
     def get_audiodata(self):
