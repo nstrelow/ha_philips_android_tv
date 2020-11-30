@@ -150,6 +150,7 @@ class PhilipsTV(MediaPlayerEntity):
             _LOGGER.info("Sending WOL [try #%s]", i)
             self.wol()
             time.sleep(3)
+            self.update()
             self._tv.set_power_state('On')
             i += 1
         if not self._api_online:
