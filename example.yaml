@@ -6,3 +6,4 @@ media_player:
     username: xxxxx
     password: xxxxx
     favorite_channels_only: false
+    wol_broadcast_ip: '192.168.1.255'

@@ -84,6 +84,7 @@ Key | Type | Required | Description
 `host` | `string` | `True` | The IP of the TV
 `mac` | `string` | `False` | The MAC of the TV (Wifi MAC required for WoWLAN)
 `favorite_channels_only` | `boolean` | `False` | Enable/disable only showing the favorite channels
+`wol_broadcast_ip` | `string` | `False` | Change the brodcast IP address for the WOL packet
 
 ## Special requirements for turning the TV back on from Standby
 Essentially wake-on-lan wakes up the API part of the TV. Then the TV is able to receive a command to set the power state to on.
