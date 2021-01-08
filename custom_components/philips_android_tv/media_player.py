@@ -33,6 +33,7 @@ _LOGGER = logging.getLogger(__name__)
 
 CONF_FAV_ONLY = 'favorite_channels_only'
 CONF_HIDE_CHANNELS = 'hide_channels'
+CONF_WOL_BROADCAST_IP = 'wol_broadcast_ip'
 
 MIN_TIME_BETWEEN_UPDATES = timedelta(seconds=5)
 
@@ -51,6 +52,7 @@ DEFAULT_NAME = 'Philips TV'
 BASE_URL = 'https://{0}:1926/6/{1}'
 TIMEOUT = 5.0
 CONNFAILCOUNT = 5
+DEFAULT_WOL_BROADCAST_IP = '255.255.255.255'
 
 PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_HOST, default=DEFAULT_HOST): cv.string,
@@ -59,7 +61,8 @@ PLATFORM_SCHEMA = PLATFORM_SCHEMA.extend({
     vol.Required(CONF_PASSWORD, default=DEFAULT_PASS): cv.string,
     vol.Optional(CONF_NAME, default=DEFAULT_NAME): cv.string,
     vol.Optional(CONF_FAV_ONLY, default=False): cv.boolean,
-    vol.Optional(CONF_HIDE_CHANNELS, default=False): cv.boolean
+    vol.Optional(CONF_HIDE_CHANNELS, default=False): cv.boolean,
+    vol.Optional(CONF_WOL_BROADCAST_IP, default=DEFAULT_WOL_BROADCAST_IP): cv.string
 })
 
 # pylint: disable=unused-argument
@@ -72,14 +75,15 @@ def setup_platform(hass, config, add_devices, discovery_info=None):
     password = config.get(CONF_PASSWORD)
     favorite_only = config.get(CONF_FAV_ONLY)
     hide_channels = config.get(CONF_HIDE_CHANNELS)
+    wol_broadcast_ip = config.get(CONF_WOL_BROADCAST_IP)
     tvapi = PhilipsTVBase(host, user, password, favorite_only, hide_channels)
-    add_devices([PhilipsTV(tvapi, name, mac)])
+    add_devices([PhilipsTV(tvapi, name, mac, wol_broadcast_ip)])
 
 
 class PhilipsTV(MediaPlayerEntity):
     """Representation of a 2016+ Philips TV exposing the JointSpace API."""
 
-    def __init__(self, tv, name, mac):
+    def __init__(self, tv, name, mac, wol_broadcast_ip):
         """Initialize the TV."""
         import wakeonlan
         self._tv = tv
@@ -87,6 +91,7 @@ class PhilipsTV(MediaPlayerEntity):
         self._name = name
         self._mac = mac
         self._wol = wakeonlan
+        self._wol_broadcast_ip = wol_broadcast_ip
         self._state = STATE_UNKNOWN
         self._on = False
         self._api_online = False
@@ -253,7 +258,7 @@ class PhilipsTV(MediaPlayerEntity):
         return self._app_name
 
     def wol(self):
-        self._wol.send_magic_packet(self._mac)
+        self._wol.send_magic_packet(self._mac, ip_address=self._wol_broadcast_ip)
 
     @Throttle(MIN_TIME_BETWEEN_UPDATES)
     def update(self):
