@@ -4,5 +4,6 @@
   "documentation": "https://github.com/nstrelow/ha_philips_2016",
   "dependencies": [],
   "codeowners": [],
-  "requirements": ["wakeonlan"]
+  "requirements": ["wakeonlan"],
+  "version": "1.0.0"
 }
