@@ -4,7 +4,7 @@ https://www.home-assistant.io/integrations/philips_js/
 Made possible by this PR: https://github.com/home-assistant/core/pull/46422 by elupus. Big thanks for making my dreams come true.
 
 If something is missing, that this component has and the official has not, please tell me.
-We might also get HDMI switch support in the future (it is not working for my TV, but others it will!!!)
+We might also get HDMI switch support in the future (it is not working for my TV, but it is already working for other TVs)
 
 # Home Assistant Philips TV (2016+) media player component
 Home Assistant custom component for the newer (2016+) Philips Android TVs
